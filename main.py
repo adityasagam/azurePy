@@ -111,7 +111,7 @@ def getDBCnxn():
     database = 'myAzurePyDB'
     username = 'azureuser'
     password = 'Azure123456'
-    driver = '{ODBC Driver 13 for SQL Server}'
+    driver = '{ODBC Driver 17 for SQL Server}'
     return pyodbc.connect('DRIVER=' + driver + ';SERVER=' + server + ';PORT=1433;DATABASE=' + database + ';UID=' + username + ';PWD=' + password)
 
 

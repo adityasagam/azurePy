@@ -8,7 +8,7 @@ import random
 import csv
 
 app = Flask(__name__)
-rds = redis.StrictRedis(host='AzurePyRedis.redis.cache.windows.net', port=6380, db=0, password='PHUt2GS7VCuue7m0vMfeaN1GD+NvCvuOqWGy3ynzeIA=', ssl=True)
+rds = redis.StrictRedis(host='AzurePyRed.redis.cache.windows.net', port=6380, db=0, password='fkHefGi1Nlzj6nUkYoQYZI24wvOrlPMveiw95rHLn1U=', ssl=True)
 
 @app.route('/')
 def my_form():

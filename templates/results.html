@@ -1,0 +1,48 @@
+<html>
+    <head>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='main.css') }}">
+    </head>
+    <body>
+        <!--
+        {% for r in data %}
+		    {{ r }}
+		{% endfor %}
+        -->
+        <div>
+ 			<span class="tbHeading">Found {{ data|length }} records:  </span> <br/>
+            <span>Time required = {{ time }} {{ isCache }}</span>
+	 		<table class="blueTable">
+	 			<thead>
+	 				<tr>
+						<th>Datetime</th>
+						<th>Magnitude</th>
+						<th>Latitude</th>
+						<th>Longitude</th>
+						<th>Place</th>
+					</tr>
+	 			</thead>
+				{% for row in data %}
+                    <!--
+                    <tr>
+						<td>{{ row['time'] }}</td>
+						<td>{{ row['mag'] }}</td>
+						<td>{{ row['latitude'] }}</td>
+						<td>{{ row['longitude'] }}</td>
+						<td>{{ row['place'] }}</td>
+					</tr>
+					-->
+
+					<tr>
+						<td>{{row.time}}</td>
+						<td>{{row.mag}}</td>
+						<td>{{row.latitude}}</td>
+						<td>{{row.longitude}}</td>
+						<td>{{row.place}}</td>
+					</tr>
+
+				{% endfor %}
+			</table>
+		</div>
+
+    </body>
+</html>

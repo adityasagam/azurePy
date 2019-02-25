@@ -14,6 +14,115 @@ rds = redis.StrictRedis(host='AzurePyRed.redis.cache.windows.net', port=6380, db
 def my_form():
     return render_template('my-form.html')
 
+@app.route('/getStateYearPopulation')
+def getStateYearPopulation():
+
+    code = request.args.get('code', '')
+    year = request.args.get('year', '')
+
+    cnxn = getDBCnxn()
+    cursor = cnxn.cursor()
+
+    sql = "SELECT population.state, population.["+year+"] FROM population, statecode\
+           where statecode.code = \'"+ code +"\' and population.state = statecode.state"
+    cursor.execute(sql)
+
+    results = cursor.fetchall()
+    cursor.close()
+    cnxn.close()
+
+    return render_template('7.html',year=year, state=code, result=results[0][1])
+
+@app.route('/populationRange')
+def getPopulationRange():
+    cacheName = 'popRange'
+    k = int(request.args.get('iterations', ''))
+
+    if rds.exists(cacheName):
+        isCache = 'with Cache'
+
+        start_time = time.time()
+        for i in range(0,k):
+            results = pickle.loads(rds.get(cacheName))
+        end_time = time.time()
+
+        rds.delete(cacheName)
+    else:
+        isCache = 'without Cache'
+        start_time = time.time()
+        pop1 = request.args.get('pop1', '')
+        pop2 = request.args.get('pop2', '')
+        year = request.args.get('year', '')
+
+        cnxn = getDBCnxn()
+        cursor = cnxn.cursor()
+        for i in range(0, k):
+            sql = "SELECT state FROM population\
+                   where "+year+" > "+ pop1+" and "+ year +" < "+ pop2
+            cursor.execute(sql)
+            results = cursor.fetchall()
+        end_time = time.time()
+        cursor.close()
+        cnxn.close()
+        rds.set(cacheName, pickle.dumps(results))
+
+    return render_template('9.html',data=results, isCache=isCache, time=(end_time-start_time))
+
+@app.route('/countCounty')
+def getCountCounty():
+    code = request.args.get('code', '')
+
+    cnxn = getDBCnxn()
+    cursor = cnxn.cursor()
+
+    sql = "SELECT county.state, COUNT(county.county) FROM county, statecode\
+           where statecode.code = \'"+code+"\' and county.state = statecode.state GROUP BY county.state"
+    cursor.execute(sql)
+
+    results = cursor.fetchall()
+    cursor.close()
+    cnxn.close()
+
+    return render_template('8.html', state=code, result=results[0][1])
+
+@app.route('/uploadPopulation')
+def uploadPopulationData():
+    sql_conn = getDBCnxn()
+    cursor = sql_conn.cursor()
+
+    start_time = time.time()
+
+    cursor.execute('CREATE TABLE [dbo].[population](\
+	[State] [nvarchar](50) NOT NULL,\
+	[2010] [numeric](18, 0) NOT NULL,\
+	[2011] [numeric](18, 0) NOT NULL,\
+	[2012] [numeric](18, 0) NOT NULL,\
+	[2013] [numeric](18, 0) NOT NULL,\
+	[2014] [numeric](18, 0) NOT NULL,\
+	[2015] [numeric](18, 0) NOT NULL,\
+	[2016] [numeric](18, 0) NOT NULL,\
+	[2017] [numeric](18, 0) NOT NULL,\
+	[2018] [numeric](18, 0) NOT NULL)')
+
+    with open('population.csv', mode='r') as csv_file:
+        csv_reader = csv.DictReader(csv_file)
+        line_count = 0
+        for row in csv_reader:
+            SQLCommand = ("INSERT INTO population "
+                          "([State],[2010],[2011],[2012],[2013],[2014],[2015],[2016],[2017],[2018])"
+                          "VALUES (?,?,?,?,?,?,?,?,?,?)")
+            Values = [row['State'], int(row['2010'].replace(',','')), int(row['2011'].replace(',','')),
+                      int(row['2012'].replace(',','')), int(row['2013'].replace(',','')),
+                      int(row['2014'].replace(',','')), int(row['2015'].replace(',','')), int(row['2016'].replace(',','')),
+                      int(row['2017'].replace(',','')), int(row['2018'].replace(',',''))]
+            cursor.execute(SQLCommand, Values)
+            cursor.commit()
+            line_count = line_count + 1
+            print("updated record number {}".format(line_count))
+    end_time = time.time()
+
+    return 'Data uploaded completely with time : ' + str(end_time - start_time)
+
 @app.route('/fetchAll')
 def fetchData():
     cacheName = 'testQueryRes'

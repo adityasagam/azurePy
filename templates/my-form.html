@@ -16,3 +16,29 @@
 <form method="GET" action="/uploadData">
 	Uplaod CSV to DB <input type="submit"></input>
 </form>
+
+<form method="GET" action="/getStateYearPopulation">
+	Enter State Code:<input type="text" name="code" maxlength="2"/>
+	Enter Year:<input type="number" name="year"/>
+	<input type="submit"></input>
+</form>
+
+<form method="GET" action="/populationRange">
+	9. POPULATION RANGE: <br/>
+	Enter low pop:<input type="number" name="pop1" />
+	Enter high pop:<input type="number" name="pop2" />
+	Enter Year:<input type="number" name="year"/>
+	Enter number of iterations <input type="number" name="iterations"/>
+	<input type="submit"></input>
+</form>
+
+<form method="GET" action="/countCounty">
+	8. Give count of Counties in State: <br/>
+	Enter State Code:<input type="text" name="code" maxlength="2"/>
+	<input type="submit"></input>
+</form>
+<!--
+<form method="GET" action="/uploadPopulation">
+	Uplaod Population CSV to DB <input type="submit"></input>
+</form>
+-->

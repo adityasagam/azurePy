@@ -14,7 +14,6 @@ from io import BytesIO
 import base64
 import pandas as pd
 import pylab as pl
-from sklearn.cluster import KMeans
 
 app = Flask(__name__)
 rds = redis.StrictRedis(host='AzurePyRed.redis.cache.windows.net', port=6380, db=0, password='fkHefGi1Nlzj6nUkYoQYZI24wvOrlPMveiw95rHLn1U=', ssl=True)
@@ -187,6 +186,7 @@ def getedushare():
     return render_template('visuals.html', data=[])
     '''
 
+'''
 @app.route('/cluster')
 def getClusterData():
     numberOfClusters = int(request.args.get('noofclusters'))
@@ -195,7 +195,7 @@ def getClusterData():
     img = BytesIO()
     data_frame.head()
     data_frame[['mag', 'depth']]   #.hist()
-    plt.show()
+    plt.show()git init
     x = data_frame[['mag', 'depth']]
     x = np.array(x)
     print(x)
@@ -224,6 +224,8 @@ def getClusterData():
     # response.headers['Content-Type'] = 'image/png'
 
     return render_template('visuals.html')
+'''
+
 
 '''
 @app.route('/getStateYearPopulation')

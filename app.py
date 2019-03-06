@@ -12,6 +12,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
+import pandas as pd
+import pylab as pl
+from sklearn.cluster import KMeans
 
 app = Flask(__name__)
 rds = redis.StrictRedis(host='AzurePyRed.redis.cache.windows.net', port=6380, db=0, password='fkHefGi1Nlzj6nUkYoQYZI24wvOrlPMveiw95rHLn1U=', ssl=True)
@@ -19,6 +22,59 @@ rds = redis.StrictRedis(host='AzurePyRed.redis.cache.windows.net', port=6380, db
 @app.route('/')
 def my_form():
     return render_template('my-form.html')
+
+@app.route('/q9')
+def getYearRangePop():
+    code = request.args.get('code', '')
+    yr1 = int(request.args.get('yr1', ''))
+    yr2 = int(request.args.get('yr2', ''))
+
+    sql = ''
+    i = yr1
+    while i <= yr2:
+        sql = sql + str(i) + ','
+        i = i+5
+    print(sql)
+    sql = sql[:-1]
+
+    qry = "select Year, BLPercent from educationshare where code=\'"+ code +"\' and year IN (" + sql+")"
+    print(qry)
+
+
+    cnxn = getDBCnxn()
+    cursor = cnxn.cursor()
+    cursor.execute(qry)
+    rows = cursor.fetchall()
+    print(rows)
+
+    x = []
+    y = []
+    for i in rows:
+        x.append(i[0])
+        y.append(i[1])
+
+
+    #colors = (0, 0, 0)
+    area = np.pi * len(x)
+
+    # Plot
+    plt.scatter(x, y, s=area, alpha=1.0)
+    plt.title('Scatter plot pythonspot.com')
+    plt.xlabel('Year')
+    plt.ylabel('Population')
+    #plt.show()
+
+    cursor.close()
+    cnxn.close()
+
+    img3 = BytesIO()
+    plt.savefig(img3, format='png')
+
+    img3.seek(0)
+    plot_url = base64.b64encode(img3.getvalue())
+    response = make_response(img3.getvalue())
+    response.headers['Content-Type'] = 'image/png'
+    return response
 
 @app.route('/barchart')
 def getStateYearPop():
@@ -44,8 +100,6 @@ def getStateYearPop():
         y_axis.append(rows[i][1])
     #print(y_axis)
 
-
-
     #objects = ('Python', 'C++', 'Java', 'Perl', 'Scala', 'Lisp')
     y_pos = np.arange(len(x_labels))
     #performance = [10, 8, 6, 4, 2, 1]
@@ -55,9 +109,17 @@ def getStateYearPop():
     plt.xticks(y_pos, x_labels)
     plt.ylabel('Population')
     plt.title('Programming language usage')
-    plt.show()
+    #plt.show()
 
-    return render_template('visuals.html', data=[])
+    img3 = BytesIO()
+    plt.savefig(img3, format='png')
+
+    img3.seek(0)
+    plot_url = base64.b64encode(img3.getvalue())
+    response = make_response(img3.getvalue())
+    response.headers['Content-Type'] = 'image/png'
+    return response
+    #return render_template('visuals.html', data=[])
 
 @app.route('/piechart')
 def getStateALlYearsPop():
@@ -99,13 +161,69 @@ def getStateALlYearsPop():
     img3 = BytesIO()
     plt.savefig(img3, format='png')
 
+
     img3.seek(0)
     plot_url = base64.b64encode(img3.getvalue())
     response = make_response(img3.getvalue())
     response.headers['Content-Type'] = 'image/png'
     return response
-    #return render_template('visuals.html', data=[])
 
+'''
+@app.route('/barchart2')
+def getedushare():
+    cnxn = getDBCnxn()
+    cursor = cnxn.cursor()
+    cursor.execute("select Entity,Code,Year,BLPercent from educationshare where Entity=\'Afghanistan\'")
+    rows = cursor.fetchall()
+    print(rows)
+    
+    # Convert pyodbc row to list
+    data = []
+    for row in rows:
+        data.append([x for x in row])
+    
+    cursor.close()
+    cnxn.close()
+    return render_template('visuals.html', data=[])
+    '''
+
+@app.route('/cluster')
+def getClusterData():
+    numberOfClusters = int(request.args.get('noofclusters'))
+
+    data_frame = pd.read_csv("all_month.csv")
+    img = BytesIO()
+    data_frame.head()
+    data_frame[['mag', 'depth']]   #.hist()
+    plt.show()
+    x = data_frame[['mag', 'depth']]
+    x = np.array(x)
+    print(x)
+
+    kmeans = KMeans(n_clusters=numberOfClusters)
+
+    kmeansoutput_x = kmeans.fit(x)
+    print(type(kmeansoutput_x))
+
+    pl.figure('5 Cluster K-Means')
+
+    pl.scatter(x[:, 0], x[:, 1], c=kmeansoutput_x.labels_, cmap='rainbow')
+
+    pl.title('5 Cluster K-Means')
+    pl.xlabel('Magnitude')
+
+    pl.ylabel('Depth')
+
+    pl.show()
+
+    # plt.savefig(img, format='png')
+    # img.seek(0)
+    # plot_url = base64.b64encode(img.getvalue())
+    #
+    # response = make_response(img.getvalue())
+    # response.headers['Content-Type'] = 'image/png'
+
+    return render_template('visuals.html')
 
 '''
 @app.route('/getStateYearPopulation')

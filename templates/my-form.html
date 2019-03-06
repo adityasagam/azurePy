@@ -1,9 +1,23 @@
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://d3js.org/d3.v5.min.js"></script>
 <div>
 	<h1>
 		Aditya Sagam
 		1001660179
 	</h1>
 </div>
+
+<form method="GET" action="/barchart">
+    <h1>Show Bar Chart</h1>
+	<input type="submit"></input>
+</form>
+
+<form method="GET" action="/piechart">
+    <h1>Show Pie Chart</h1>
+	<input type="submit"></input>
+</form>
+
+<!--
 <form method="GET" action="/makeMultipleQueries">
 	Enter Lower Magnitude:<input type="number" name="mag1"/>
 	Enter Higher Magnitude:<input type="number" name="mag2"/>
@@ -36,6 +50,11 @@
 	8. Give count of Counties in State: <br/>
 	Enter State Code:<input type="text" name="code" maxlength="2"/>
 	<input type="submit"></input>
+</form>
+-->
+<form method="GET" action="/returnResults">
+    <h2>D3 visulatization</h2>
+    <input type="submit"/>
 </form>
 <!--
 <form method="GET" action="/uploadPopulation">

@@ -1,0 +1,166 @@
+Metadata-Version: 1.1
+Name: Xmlify
+Version: 0.1.1
+Summary: Simple and fast Python built-in type XML serialiser
+Home-page: https://bitbucket.org/saaj/xmlify
+Author: saaj
+Author-email: mail@saaj.me
+License: LGPL-2.1+
+Description: .. image:: https://badge.fury.io/py/Xmlify.png
+          :target: https://pypi.python.org/pypi/Xmlify
+        
+        ======
+        Xmlify
+        ======
+        Xmlify is simple and fast Python built-in type XML serialiser. Its purpose is to convert
+        nested structures that are composed of types like ``dict``, ``list``, ``tuple``, ``str``, 
+        ``int``, etc. It has no dependencies, uses ``xml.etree.cElementTree`` and produces XML 
+        structure suitable for humans to read.
+        
+        Use case
+        ========
+        I use it for structured logging into MySQL. Later, when I need to investigation an incident,
+        I can further narrow the result set using `MySQL XML functions 
+        <https://dev.mysql.com/doc/refman/5.1/en/xml-functions.html>`_. You can
+        use it for something else.
+        
+        Result markup
+        =============
+        Because the XML tree is constructed only using ``xml.etree.cElementTree`` the output is
+        always valid XML. But it is more restrictive to tag names. Output tag names avoid colon 
+        (XML namespaces) and are ASCII-only, even though the specification `permits Unicode 
+        codepoints <http://www.w3.org/TR/REC-xml/#NT-NameChar>`_. It was to simplify things, 
+        as there was no benefit of having Unicode tags, and to maximise XML parser compatibility. 
+        
+        Unicode tag names are hex-encoded and prefixed with ``x``. XML-incompatible binary values
+        are hex-encoded in the same way. XML-incompatible ASCII characters in tag names are replaced 
+        with underscore. If tag name starts with a digit it is prefixed with ``n``. Though, it's easy
+        to override. The following regular expressions control substitution and tag's first character
+        match. You can also monkeypatch ``xmlify._key`` completely.   
+        
+        .. sourcecode:: python
+        
+          xmlify._notFirstCharRe  = re.compile(r'[^a-z_]{1}', re.IGNORECASE)
+          xmlify._notOtherCharsRe = re.compile(r'[^a-z0-9_\-\.]', re.IGNORECASE)
+        
+        The type information isn't preserved intentionally to make the output easier to read to a human.
+        If you need to preserve type information or to convert XML to objects two-way, just use stdlib's
+        ``xmlrpclib.dumps``/``xmlrpclib.loads``. 
+        
+        Usage
+        =====
+        This is the public API:
+        
+        .. sourcecode:: python
+        
+          def dump(obj, fp, root = 'data', declaration = False): pass
+          
+          def dumps(obj, root = 'data', declaration = False): pass
+          
+        Use it like:
+        
+        .. sourcecode:: python
+        
+          import datetime
+          import xmlify
+          
+          d = {
+            'python' : {
+              2 : {
+                2.7 : {
+                  'version' : (2, 7, 10),
+                  'date'    : datetime.date(2015, 5, 23) 
+                }
+              },
+              3 : {
+                3.3 : {
+                  'version' : (3, 3, 6),
+                  'date'    : datetime.date(2014, 10, 12) 
+                },
+                3.4 : {
+                  'version' : (3, 4, 3),
+                  'date'    : datetime.date(2015, 2, 25) 
+                }        
+              }
+            }
+          }
+          print(xmlify.dumps(d))
+        
+        It prints the following XML (indented separately):
+          
+        .. sourcecode:: xml
+        
+          <data>
+            <python>
+              <n2>
+                <n2.7>
+                  <date>2015-05-23</date>
+                  <version>
+                    <version-item>2</version-item>
+                    <version-item>7</version-item>
+                    <version-item>10</version-item>
+                  </version>
+                </n2.7>
+              </n2>
+              <n3>
+                <n3.3>
+                  <date>2014-10-12</date>
+                  <version>
+                    <version-item>3</version-item>
+                    <version-item>3</version-item>
+                    <version-item>6</version-item>
+                  </version>
+                </n3.3>
+                <n3.4>
+                  <date>2015-02-25</date>
+                  <version>
+                    <version-item>3</version-item>
+                    <version-item>4</version-item>
+                    <version-item>3</version-item>
+                  </version>
+                </n3.4>
+              </n3>
+            </python>
+          </data>
+          
+        Simple?
+        =======
+        It's worth just 14 LLOC of a `recursive function 
+        <https://bitbucket.org/saaj/xmlify/src/fb27d4fe/xmlify/__init__.py#cl-54>`_. The rest ~100 LLOC
+        is supporting code that goes in line with Pareto principle.
+        
+        Fast?
+        =====
+        .. sourcecode:: bash
+        
+          $ python -c 'import os; print(len(os.environ))'
+          58
+          $ python2.7 -m timeit 'import os,xmlify; xmlify.dumps(os.environ)'
+          1000 loops, best of 3: 987 usec per loop
+          $ python3.3 -m timeit 'import os,xmlify; xmlify.dumps(os.environ)'
+          1000 loops, best of 3: 1.62 msec per loop
+          $ pypy -m timeit 'import os,xmlify; xmlify.dumps(os.environ)'
+          1000 loops, best of 3: 193 usec per loop
+          
+        Inventing own wheel
+        ===================
+        NIH was not the case – even though I already had a working code I would happily have used an
+        existing library that fits my needs. At the Cheese Shop there were several groups of libraries 
+        that do the same or closely related thing:
+        
+        * Mappers that need schema up-front
+        * Libraries that need to build dependencies with OS package dependencies, e.g. lxml
+        * Marshallers that try to preserve type information, thus making result markup hard to read
+        * Libraries that build XML tree manually with strings and thus with potential escaping issues
+        * Just broken
+        
+        I the end I just decided to package the code I had.
+        
+Keywords: python xml
+Platform: Any
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3.3
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Programming Language :: Python :: Implementation :: PyPy
+Classifier: Intended Audience :: Developers

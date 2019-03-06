@@ -1,11 +1,17 @@
 # from flask import Flask
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, make_response
 import pyodbc
 import time
 import redis
 import _pickle as pickle
 import random
 import csv
+import json
+import matplotlib.pyplot as plt; plt.rcdefaults()
+import numpy as np
+import matplotlib.pyplot as plt
+from io import BytesIO
+import base64
 
 app = Flask(__name__)
 rds = redis.StrictRedis(host='AzurePyRed.redis.cache.windows.net', port=6380, db=0, password='fkHefGi1Nlzj6nUkYoQYZI24wvOrlPMveiw95rHLn1U=', ssl=True)
@@ -14,6 +20,94 @@ rds = redis.StrictRedis(host='AzurePyRed.redis.cache.windows.net', port=6380, db
 def my_form():
     return render_template('my-form.html')
 
+@app.route('/barchart')
+def getStateYearPop():
+    cnxn = getDBCnxn()
+    cursor = cnxn.cursor()
+    cursor.execute("select [state], [2010] from population")
+    rows = cursor.fetchall()
+
+    '''
+    # Convert pyodbc row to list
+    data = []
+    for row in rows:
+        data.append([x for x in row])
+    '''
+    cursor.close()
+    cnxn.close()
+
+    x_labels = ()
+    y_axis = []
+    for i, row in enumerate(rows):
+        #print(rows[i][1])
+        x_labels = x_labels + (row.state,)
+        y_axis.append(rows[i][1])
+    #print(y_axis)
+
+
+
+    #objects = ('Python', 'C++', 'Java', 'Perl', 'Scala', 'Lisp')
+    y_pos = np.arange(len(x_labels))
+    #performance = [10, 8, 6, 4, 2, 1]
+    performance = y_axis
+
+    plt.bar(y_pos, performance, align='center', alpha=0.5)
+    plt.xticks(y_pos, x_labels)
+    plt.ylabel('Population')
+    plt.title('Programming language usage')
+    plt.show()
+
+    return render_template('visuals.html', data=[])
+
+@app.route('/piechart')
+def getStateALlYearsPop():
+    cnxn = getDBCnxn()
+    cursor = cnxn.cursor()
+    cursor.execute("select [state], [2010], [2011], [2012], [2013], [2014], \
+                    [2015], [2016], [2017], [2018] from population where state=\'Alabama\'")
+    rows = cursor.fetchall()
+
+    '''
+    # Convert pyodbc row to list
+    data = []
+    for row in rows:
+        data.append([x for x in row])
+    '''
+    cursor.close()
+    cnxn.close()
+
+    y_axis = []
+    for i in range(1, 10):
+        #print(rows[i][1])
+        y_axis.append(rows[0][i])
+        print(y_axis)
+    #print(y_axis)
+
+    # Data to plot
+    labels = '2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018'
+    sizes = y_axis
+    #colors = ['gold', 'yellowgreen', 'lightcoral', 'lightskyblue']
+    #explode = (0.1, 0, 0, 0)  # explode 1st slice
+
+    # Plot
+    plt.pie(sizes, labels=labels,
+            autopct='%1.1f%%', shadow=True, startangle=140)
+
+    plt.axis('equal')
+
+    #plt.show()
+    img3 = BytesIO()
+    plt.savefig(img3, format='png')
+
+    img3.seek(0)
+    plot_url = base64.b64encode(img3.getvalue())
+    response = make_response(img3.getvalue())
+    response.headers['Content-Type'] = 'image/png'
+    return response
+    #return render_template('visuals.html', data=[])
+
+
+'''
 @app.route('/getStateYearPopulation')
 def getStateYearPopulation():
 
@@ -32,7 +126,9 @@ def getStateYearPopulation():
     cnxn.close()
 
     return render_template('7.html',year=year, state=code, result=results[0][1])
+'''
 
+'''
 @app.route('/populationRange')
 def getPopulationRange():
     cacheName = 'popRange'
@@ -67,7 +163,9 @@ def getPopulationRange():
         rds.set(cacheName, pickle.dumps(results))
 
     return render_template('9.html',data=results, isCache=isCache, time=(end_time-start_time))
+'''
 
+'''
 @app.route('/countCounty')
 def getCountCounty():
     code = request.args.get('code', '')
@@ -84,7 +182,9 @@ def getCountCounty():
     cnxn.close()
 
     return render_template('8.html', state=code, result=results[0][1])
+'''
 
+'''
 @app.route('/uploadPopulation')
 def uploadPopulationData():
     sql_conn = getDBCnxn()
@@ -122,7 +222,9 @@ def uploadPopulationData():
     end_time = time.time()
 
     return 'Data uploaded completely with time : ' + str(end_time - start_time)
+'''
 
+'''
 @app.route('/fetchAll')
 def fetchData():
     cacheName = 'testQueryRes'
@@ -150,19 +252,16 @@ def fetchData():
         results = cursor.fetchall()
         end_time = time.time()
 
-        '''
-        columns = [column[0] for column in cursor.description]
-        records = []
-        for row in results:
-            records.append(dict(zip(columns, row)))
-        '''
         cursor.close()
         cnxn.close()
         rds.set(cacheName, pickle.dumps(results))
 
     return render_template('results.html', data=results, time=(end_time - start_time), isCache=isCache)
+'''
 
+'''
 rdsKeys = []
+
 
 @app.route('/makeMultipleQueries')
 def fetchMagQueries():
@@ -214,6 +313,8 @@ def fetchMagQueries():
     cursor.close()
     cnxn.close()
     return render_template('results.html', data=results, time=(end_time - start_time), isCache=isCache)
+'''
+
 
 def getDBCnxn():
     server = 'mysqlpyserver.database.windows.net'
@@ -223,7 +324,7 @@ def getDBCnxn():
     driver = '{ODBC Driver 17 for SQL Server}'
     return pyodbc.connect('DRIVER=' + driver + ';SERVER=' + server + ';PORT=1433;DATABASE=' + database + ';UID=' + username + ';PWD=' + password)
 
-
+'''
 @app.route('/uploadData')
 def my_form_post():
     import pandas as pd
@@ -252,23 +353,12 @@ def my_form_post():
             line_count = line_count + 1
             print("updated record number {}".format(line_count))
 
-    '''
-    for index, row in df.iterrows():
-        print(row['rms'])
-        cursor.execute("INSERT INTO dbo.Earthquake([time],[latitude],[longitude],[depth],[mag],[magType],[nst],[gap],[dmin],[rms],[net],[id],[updated],[place],[type],\
-                       [horizontalError],[depthError],[magError],[magNst],[status],[locationSource],[magSource])\
-                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                       row['time'], float(row['latitude']), float(row['longitude']), float(row['depth']), float(row['mag']), row['magType'],
-                       row['nst'], row['gap'], float(row['dmin']),
-                       float(row['rms']),
-                       row['net'], row['id'], row['updated'],
-                       row['place'], row['type'], row['horizontalError'], float(row['depthError']), row['magError'], row['magNst'],
-                       row['status'], row['locationSource'], row['magSource'])
-    '''
+    
     sql_conn.commit()
     cursor.close()
     sql_conn.close()
     return "Completed Upload!"
+'''
 
 '''
 @app.route('/', methods=['POST'])
@@ -276,7 +366,6 @@ def my_form_post():
   text = request.form['text']
   processed_text = text.upper()
   return processed_text
-
 def hello_world():
 return 'Hello, World!\n This looks just amazing within 5 minutes'
 '''

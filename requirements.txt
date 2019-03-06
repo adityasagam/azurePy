@@ -2,3 +2,5 @@ Flask==0.12.1
 redis
 pyodbc
 pandas
+matplotlib
+numpy
